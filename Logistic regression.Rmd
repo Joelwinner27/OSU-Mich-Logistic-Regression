@@ -9,22 +9,115 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
-
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+```{r}
+library(tidyverse)
 ```
 
-## Including Plots
 
-You can also embed plots, for example:
+## Michigan
+```{r}
+UofM <- read.csv("C:\\Users\\winne\\OneDrive\\mich_2023(2).csv")
+UofM <- UofM %>% 
+  mutate(W = X.1 == "W")
+UofM$Opponent <- gsub("\\(\\d+\\)\\s*", "", UofM$Opponent)
+UofM <- UofM %>%
+  mutate_if(is.character, str_trim) #removing rankings and formatting for opponent names
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+
+
+m1 <- glm(W ~ Pts, family = "binomial", data = UofM)
+p <- m1$fitted.values
+odds <- p/(1-p)
+log.odds <- log(odds)
+
+
+plot(UofM$Pts, UofM$W, pch=1, col="white", main = "Logistic regression UofM football 2021-2023", xlab = "Michigan's Points Scored", ylab = "Win Probability")
+
+for (i in 1:nrow(UofM)) {
+  if(UofM$W[i] == FALSE | UofM$Opponent[i] == "Ohio State" | UofM$Opponent[i] == "Michigan State") {
+    t <- UofM$Opponent[i]
+    filepath <- paste0("C:\\Users\\winne\\OneDrive\\Desktop\\logos\\B1G_Logos - Copy\\",t,".png")
+    logo <- png::readPNG(filepath)
+    addImg(logo, UofM$Pts[i],
+           UofM$W[i], width = 4)
+  } else {
+    points(UofM$Pts[i], UofM$W[i], col = "#00274c", pch = 16, cex = 1.3)
+  }
+}
+
+points <- 0:70
+points <- data.frame("Pts"=points)
+predicted <- predict(m1, points, type = "response")
+lines(points$Pts, predicted, lwd=3, col = "#ffcb05")
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+## OSU
+
+```{r}
+osu <- read.csv("C:\\Users\\winne\\OneDrive\\osu_data20222024.csv")
+osu <- osu %>% 
+  mutate(W = X.1 == "W")
+osu$Opponent <- gsub("\\(\\d+\\)\\s*", "", osu$Opponent)
+osu <- osu %>%
+  mutate_if(is.character, str_trim)
+
+m2 <- glm(W ~ Pts, family = "binomial", data = osu)
+p <- m1$fitted.values
+odds_osu <- p/(1-p)
+log.odds_osu <- log(odds_osu)
+
+plot(osu$Pts, osu$W, pch=1, col="white", main = "Logistic regression OSU football 2022-2024", xlab = "OSU's Points Scored", ylab = "Win Probability")
+
+for (i in 1:nrow(osu)) {
+  if(osu$W[i] == FALSE | osu$Opponent[i] == "Penn State") {
+    t <- osu$Opponent[i]
+    filepath <- paste0("C:\\Users\\winne\\OneDrive\\Desktop\\logos\\B1G_Logos - Copy\\",t,".png")
+    logo <- png::readPNG(filepath)
+    addImg(logo, osu$Pts[i],
+           osu$W[i], width = 4.5)
+  } else {
+    points(osu$Pts[i], osu$W[i], col = "#666666", pch = 16, cex = 1.3)
+  }
+}
+points <- data.frame("Pts"=points)
+predicted_osu <- predict(m2, points, type = "response")
+lines(points$Pts, predicted_osu, lwd=3, col = "#BB0000")
+```
+
+
+### Excluding Michigan losses
+
+```{r}
+osu <- read.csv("C:\\Users\\winne\\OneDrive\\osu_data20222024.csv")
+osu <- osu %>% 
+  mutate(W = X.1 == "W")
+
+osu$Opponent <- gsub("\\(\\d+\\)\\s*", "", osu$Opponent)
+osu <- osu %>%
+  mutate_if(is.character, str_trim)
+osu <- osu %>%
+  filter(Opponent != "Michigan")
+m2 <- glm(W ~ Pts, family = "binomial", data = osu)
+p <- m1$fitted.values
+odds_osu <- p/(1-p)
+log.odds_osu <- log(odds_osu)
+
+plot(osu$Pts, osu$W, pch=1, col="white", main = "Logistic regression OSU football 2022-2024", xlab = "OSU's Points Scored", ylab = "Win Probability")
+
+for (i in 1:nrow(osu)) {
+  if(osu$W[i] == FALSE) {
+    t <- osu$Opponent[i]
+    filepath <- paste0("C:\\Users\\winne\\OneDrive\\Desktop\\logos\\B1G_Logos - Copy\\",t,".png")
+    logo <- png::readPNG(filepath)
+    addImg(logo, osu$Pts[i],
+           osu$W[i], width = 4.5)
+  } else {
+    points(osu$Pts[i], osu$W[i], col = "#666666", pch = 16, cex = 1.3)
+  }
+}
+points <- data.frame("Pts"=points)
+predicted_osu <- predict(m2, points, type = "response")
+lines(points$Pts, predicted_osu, lwd=3, col = "#BB0000")
+```
+
